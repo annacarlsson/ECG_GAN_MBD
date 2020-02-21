@@ -10,11 +10,6 @@ Sine Data
     images generated using a single layer of CNN in the discriminator and 2 CNN layers 
     to see if this improves the quality of series generated.
 """
-"""
-Bringing in required dependencies as defined in the GitHub repo: 
-    https://github.com/josipd/torch-two-sample/blob/master/torch_two_sample/permutation_test.pyx"""
-
-
 from __future__ import division
 
 import torch
@@ -29,6 +24,7 @@ sns.set(rc={'figure.figsize':(11, 4)})
 
 import datetime 
 from datetime import date
+import pathlib
 today = date.today()
 
 import random
@@ -36,8 +32,9 @@ import json as js
 import pickle
 import os
 
-from data import ECGData, PD_to_Tensor
-from Model import Generator, Discriminator , noise
+#from data import ECGData, 
+from data import PD_to_Tensor, SineData
+from model import Generator, Discriminator , noise
 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
@@ -286,7 +283,8 @@ p2_s = 2
 
 minibatch_out = [0,3,5,8,10]
 for minibatch_layer in minibatch_out:
-  path = ".../your_path/Run_"+str(today.strftime("%d_%m_%Y"))+"_"+ str(datetime.datetime.now().time()).split('.')[0]
+  current_file_path = str(pathlib.Path(__file__).parent.absolute())
+  path = current_file_path+"/Run_"+str(today.strftime("%d_%m_%Y"))+"_"+ str(datetime.datetime.now().time()).split('.')[0]
   os.mkdir(path)
 
   dict = {'data' : source_filename, 
@@ -321,8 +319,8 @@ for minibatch_layer in minibatch_out:
   f.close()
   
   #Initialising the generator and discriminator
-  generator_1 = Generator(seq_length,sample_size,hidden_dim =  hidden_nodes_g, tanh_output = tanh_layer, bidirectional = bidir).cuda()
-  discriminator_1 = Discriminator(seq_length, sample_size ,minibatch_normal_init = minibatch_normal_init_, minibatch = minibatch_layer,num_cv = num_cvs, cv1_out = cv1_out,cv1_k = cv1_k, cv1_s = cv1_s, p1_k = p1_k, p1_s = p1_s, cv2_out= cv2_out, cv2_k = cv2_k, cv2_s = cv2_s, p2_k = p2_k, p2_s = p2_s).cuda()
+  generator_1 = Generator(seq_length,sample_size,hidden_dim =  hidden_nodes_g, tanh_output = tanh_layer, bidirectional = bidir)
+  discriminator_1 = Discriminator(seq_length, sample_size ,minibatch_normal_init = minibatch_normal_init_, minibatch = minibatch_layer,num_cv = num_cvs, cv1_out = cv1_out,cv1_k = cv1_k, cv1_s = cv1_s, p1_k = p1_k, p1_s = p1_s, cv2_out= cv2_out, cv2_k = cv2_k, cv2_s = cv2_s, p2_k = p2_k, p2_s = p2_s)
   #Loss function 
   loss_1 = torch.nn.BCELoss()
 
@@ -356,15 +354,15 @@ for minibatch_layer in minibatch_out:
 
           y_pred_fake = discriminator_1(dis_fake_data)
 
-          loss_fake = loss_1(y_pred_fake,torch.zeros([len(sample_data),1]).cuda())
-          loss_fake.backward()    
+          loss_fake = loss_1(y_pred_fake,torch.zeros([len(sample_data),1]))
+          loss_fake.backward()
 
           #Train Discriminator on Real Data 
 
-          real_data = Variable(sample_data.float()).cuda()    
+          real_data = Variable(sample_data.float())  
           y_pred_real  = discriminator_1.forward(real_data)
 
-          loss_real = loss_1(y_pred_real,torch.ones([len(sample_data),1]).cuda())
+          loss_real = loss_1(y_pred_real,torch.ones([len(sample_data),1]))
           loss_real.backward()
 
           d_optimizer_1.step() #Updating the weights based on the predictions for both real and fake calculations.
@@ -383,7 +381,7 @@ for minibatch_layer in minibatch_out:
           gen_fake_data = generator_1.forward(noise_sample,h_g)
           y_pred_gen = discriminator_1(gen_fake_data)
 
-          error_gen = loss_1(y_pred_gen,torch.ones([len(sample_data),1]).cuda())
+          error_gen = loss_1(y_pred_gen,torch.ones([len(sample_data),1]))
           error_gen.backward()
           g_optimizer_1.step()
 
@@ -404,7 +402,7 @@ for minibatch_layer in minibatch_out:
           with torch.no_grad():
               h_g = generator_1.init_hidden()
               fake = generator_1(noise(len(sample_data), seq_length),h_g).detach().cpu()
-              generated_sample = torch.zeros(1,seq_length).cuda()
+              generated_sample = torch.zeros(1,seq_length)
               testloader=torch.utils.data.DataLoader(sine_data_test, batch_size=sample_size, shuffle=True)
               
               

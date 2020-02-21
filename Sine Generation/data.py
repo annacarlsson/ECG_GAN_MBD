@@ -37,5 +37,5 @@ class SineData(Dataset):
 """Including the function that will transform the dataframe to a pytorch tensor"""
 class PD_to_Tensor(object):
     def __call__(self,sample):
-      return torch.tensor(sample.values).cuda()
+      return torch.tensor(sample.values)
 

@@ -170,8 +170,8 @@ class Generator(torch.nn.Module):
       
   def init_hidden(self):
       weight = next(self.parameters()).data
-      hidden = (weight.new(self.num_layers*self.num_dirs, self.batch_size, self.hidden_dim).zero_().cuda(),
-                weight.new(self.num_layers*self.num_dirs, self.batch_size, self.hidden_dim).zero_().cuda())
+      hidden = (weight.new(self.num_layers*self.num_dirs, self.batch_size, self.hidden_dim).zero_(),
+                weight.new(self.num_layers*self.num_dirs, self.batch_size, self.hidden_dim).zero_())
       return hidden
   
   def forward(self,x,hidden):
@@ -193,5 +193,5 @@ Noise Definition
 This defines the function for generating the randon noise required to train the GAN.
 """
 def noise(batch_size, features):
-  noise_vec = torch.randn(batch_size, features).cuda()
+  noise_vec = torch.randn(batch_size, features)
   return noise_vec
