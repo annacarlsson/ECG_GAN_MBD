@@ -6,10 +6,10 @@ Created on Tue Dec 24 20:25 2019
 Script to generate a training and test data set of sine waves
 """
 
-
 import pandas as pd
 import numpy as np
 import random
+import matplotlib.pyplot as plt
 
 """Create a training set of sine waves with 10000 records"""
 a = np.arange(0.1,0.9,0.02)
@@ -23,7 +23,7 @@ for n in range(10000):
   amp = a[random.randint(0,len(a)-1)]
   rad = r[random.randint(0,len(r)-1)]
   phase = random.uniform(-1,1)*np.pi
-  y = np.append(y,amp*np.sin(((2*np.pi*rad*x)+phase)/fs).reshape((1,len(x))),axis = 0)
+  y = np.append(y,amp*np.sin((2*np.pi*rad*x)/fs + phase).reshape((1,len(x))),axis = 0)
      
 data = pd.DataFrame(y[1:][:])  
 data.to_csv('./sinedata_v2.csv', header = False, index = False)
@@ -41,7 +41,7 @@ for n in range(3000):
   rad = r[random.randint(0,len(r)-1)]
   phase = random.uniform(-1,1)*np.pi
 
-  y = np.append(y,amp*np.sin(((2*np.pi*rad*x)+phase)/fs).reshape((1,len(x))),axis = 0)
+  y = np.append(y,amp*np.sin((2*np.pi*rad*x)/fs + phase).reshape((1,len(x))),axis = 0)
   
 data = pd.DataFrame(y[1:][:])  
 data.to_csv('sinedata_test_v2.csv', header = False, index = False)
