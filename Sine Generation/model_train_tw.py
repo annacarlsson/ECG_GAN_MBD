@@ -31,7 +31,7 @@ tanh_layer = False
 bidir = True
     
 #Params for the Discriminator
-minibatch_layer = 3
+minibatch_layer = 0
 minibatch_normal_init_ = True
 num_cvs = 1
 cv1_out= 10
@@ -48,7 +48,7 @@ p2_s = 2
 # Training parameters
 D_rounds = 3
 G_rounds = 1
-num_epoch = 120
+num_epoch = 50
 learning_rate = 0.0002
 
 ## LOAD DATA
@@ -59,10 +59,6 @@ sine_data = SineData(filename ,transform = compose)
 batch_size = 50
 data_loader = torch.utils.data.DataLoader(sine_data, batch_size=batch_size, shuffle=True)
 num_batches = len(data_loader)
-
-test_filename =  './sinedata_test_v2.csv'
-sine_data_test = SineData(filename, transform = compose)
-data_loader_test = torch.utils.data.DataLoader(sine_data_test, batch_size=batch_size, shuffle=True)
 
 seq_length = sine_data[0].size()[0]
 
@@ -114,15 +110,22 @@ class Discriminator(torch.nn.Module):
                 ,torch.nn.ReLU()
                 ,torch.nn.MaxPool1d(kernel_size = int(p2_k), stride = int(p2_s)))
         
-            self.mb1 = MinibatchDiscrimination(self.cv2_dims*cv2_out,self.minibatch, minibatch_normal_init)
-            self.out = torch.nn.Sequential(torch.nn.Linear(int(self.cv2_dims*cv2_out)+self.minibatch,1),torch.nn.Sigmoid()) # to make sure the output is between 0 and 1
-        
+            if self.minibatch > 0:
+                self.mb1 = MinibatchDiscrimination(self.cv2_dims*cv2_out,self.minibatch, minibatch_normal_init)
+                self.out = torch.nn.Sequential(torch.nn.Linear(int(self.cv2_dims*cv2_out)+self.minibatch,1),torch.nn.Sigmoid()) # to make sure the output is between 0 and 1
+            else:
+                self.out = torch.nn.Sequential(torch.nn.Linear(int(self.cv2_dims*cv2_out),1),torch.nn.Sigmoid()) # to make sure the output is between 0 and 1 
+      
+
         # 1 convolutional layer
         else:
             if self.minibatch > 0 :    
                 self.mb1 = MinibatchDiscrimination(int(self.cv1_dims*cv1_out),self.minibatch, minibatch_normal_init)
                 self.out = torch.nn.Sequential(torch.nn.Linear(int(self.cv1_dims*cv1_out)+self.minibatch,1),torch.nn.Dropout(0.2),torch.nn.Sigmoid()) # to make sure the output is between 0 and 1
-                
+            else:
+                self.out = torch.nn.Sequential(torch.nn.Linear(int(self.cv1_dims*cv1_out),1),torch.nn.Sigmoid())  
+           
+
     def forward(self,x):
         x = self.CV1(x.view(self.batch_size,1,self.seq_length))
         
@@ -320,4 +323,3 @@ plt.plot(gen_data[random.randint(0,batch_size-1)].tolist(),'-g')
 plt.plot(gen_data[random.randint(0,batch_size-1)].tolist(),'-', color = 'orange')
 plt.savefig(path+'/Generated_Data_Sample1.png')
 plt.close()
-
